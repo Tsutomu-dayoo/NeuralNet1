@@ -1,5 +1,5 @@
 //
-//  main.cpp
+//  SimultaneousEqu.cpp
 //  NeuralNet1
 //
 //  Created by 山口勉 on 2018/10/02.
@@ -11,72 +11,52 @@
 #include <stdlib.h>
 #include <math.h>
 
-#define num 4 + 1
+#define num 5 + 1
 
 double sigmoid(int i,double sum[num]);
 double energy(void);
+double SimultaneousEqu(double x[num]);
+double ConstantValue(void);
+double ObtaineTheta(int n,double c);
+double ObtaineWeight(int n,int m,double theta_n,double theta_m,double c);
 
-double a;
+double a[num][num] =
+{ {0.0,1.0,-1.0,-1.0,1.0,-2.0},
+    {-3.0,2.0,0.0,1.0,-1.0,2.0},
+    {-1.0,-1.0,2.0,0.0,-1.0,1.0},
+    {1.0,0.0,-2.0,1.0,-1.0,0.0,},
+    {-3.0,1.0,-1.0,2.0,-1.0,1.0,},
+    {0.0,0.0,0.0,0.0,0.0,0.0}
+};
 double w[num][num];//重み
-double x[num] = {1.0,1.0,1.0,1.0,1.0}; //後で変える//最初はダミーニューロン
-double y[num] = {0.0,0.0,0.0,0.0,0.0};
+double x[num]; //後で変える//最初はダミーニューロン
+double y[num];
+double theta[num];
 
 int main(void){
-    double theta = -0.5;
     static double sum[num];
-    //static double p = 0.0;//確率
     static double E; //エネルギー関数
-    int i,j,k;
-    //重み決め
-    for(i=0;i<num;i++){
-        for(j=0;j<num;j++){
-            if(i == j){
-                w[i][j] = 0.0;
-            }
-            else if(i == 0 || j == 0){
-                w[i][j] = -theta;
-            }
-            else{
-                w[i][j] = -1.0;
-            }
-        }
-        sum[i] = 0.0;//和を初期化
-    }
+    static double const_value;
+    int i,j;
     
-    srand(10);
-    printf("x1:%lf,x2:%lf,x3:%lf,x4:%lf\n",x[1],x[2],x[3],x[4]);
-    printf("↑xの初期値\n");
-    for(i=0;i<100;i++){
+    const_value = ConstantValue();
+    printf("C:%lf\n",const_value);
+    for(i=0;i<num;i++){
+        theta[i] = ObtaineTheta(i,const_value);
+        printf("theta_%d:%lf\n",i,theta[i]);
+    }
+    for(i=0;i<num;i++){
+        
         for(j=0;j<num;j++){
-            if(j != 0){
-                //printf("j=%d\n",j);
-                for(k=0;k<num;k++){
-                    x[0] = 1.0;
-                    sum[j] += w[k][j] * x[k];
-                    //printf("sum[%d]:%lf\n",j,sum[j]);
-                }
-                //xの値を更新
-                if(sum[j]>=0){
-                    y[j] = 1.0;
-                }
-                else{
-                    y[j] = 0.0;
-                }
-                x[j] = y[j];
-                printf("x1:%lf,x2:%lf,x3:%lf,x4:%lf\n",x[1],x[2],x[3],x[4]);
-                //エネルギーの評価
-                E = energy();
-                printf("E:%lf\n",-0.5*E);
-            }
-            sum[j] = 0.0;
+            w[i][j] = ObtaineWeight(i, j, theta[i], theta[j], const_value);
+            printf("w[%d][%d]:%lf\n",i,j,w[i][j]);
         }
     }
 }
 
 double sigmoid(int i,double sum[]){
     double p;
-    //double a;
-    a = 0.5;
+    double a = 0.5;
     p = 1 / (1 + exp(-a * sum[i]));
     
     return p;
@@ -92,4 +72,77 @@ double energy(void){
         }
     }
     return e;
+}
+//n,m番目の重みを求める、必要な値は予め求めておく
+double ObtaineWeight(int n,int m,double theta_n,double theta_m,double c){
+    int i;
+    double E_nm = 0.0;
+    
+    if(n == 0 || m == 0){
+        return theta_n;
+    }
+    else if(n != m){
+        for(i=0;i<num;i++){
+            if(i == 0 || i == n || i == m){
+                x[i] = 1.0;
+            }
+            else{
+                x[i] = 0.0;
+            }
+        }
+        E_nm = SimultaneousEqu(x) + theta_n + theta_m + c;
+        return E_nm;
+    }
+    else{
+        return 0.0;
+    }
+}
+
+//n番目のthetaを求める、cは定数の値を予め求める
+double ObtaineTheta(int n,double c){
+    int i;
+    double E_n = 0.0;
+    
+    for(i=0;i<num;i++){
+        if(i == 0 || i == n){
+            x[i] = 1.0;
+        }
+        else{
+            x[i] = 0.0;
+        }
+    }
+    E_n = SimultaneousEqu(x) - c;
+    return E_n;
+}
+//定数を求める
+double ConstantValue(void){
+    int i;
+    double C = 0.0;
+    
+    for(i=0;i<num;i++){
+        if(i == 0){
+            x[i] = 1.0;
+        }
+        else{
+            x[i] = 0.0;
+        }
+    }
+    C = SimultaneousEqu(x);
+    return C;
+}
+
+double SimultaneousEqu(double x[num]){
+    double E = 0.0;
+    double sum = 0.0;
+    int i,j;
+    
+    for(i=0;i<num;i++){
+        
+        for(j=0;j<num;j++){
+            sum += a[i][j] * x[j];
+        }
+        E += sum * sum;
+        sum = 0.0;
+    }
+    return E;
 }
