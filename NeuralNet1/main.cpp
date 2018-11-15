@@ -19,6 +19,7 @@ double SimultaneousEqu(double x[num]);
 double ConstantValue(void);
 double ObtaineTheta(int n,double c);
 double ObtaineWeight(int n,int m,double theta_n,double theta_m,double c);
+void initialization(void);
 
 double a[num][num] =
 { {0.0,1.0,-1.0,-1.0,1.0,-2.0},
@@ -37,21 +38,73 @@ int main(void){
     static double sum[num];
     static double E; //エネルギー関数
     static double const_value;
-    int i,j;
-    
+    int i,j,k;
     const_value = ConstantValue();
-    printf("C:%lf\n",const_value);
-    for(i=0;i<num;i++){
-        theta[i] = ObtaineTheta(i,const_value);
-        printf("theta_%d:%lf\n",i,theta[i]);
-    }
+    
     for(i=0;i<num;i++){
         
         for(j=0;j<num;j++){
-            w[i][j] = ObtaineWeight(i, j, theta[i], theta[j], const_value);
+            if(i == j){
+                w[i][j] = 0.0;
+            }
+            else if(i == 0){
+                w[i][j] = -ObtaineTheta(j,const_value);
+            }
+            else if(j == 0){
+                w[i][j] = -ObtaineTheta(i,const_value);
+            }
+            else{
+                w[i][j] = ObtaineWeight(i, j, ObtaineTheta(i,const_value), ObtaineTheta(j,const_value), const_value);
+            }
             printf("w[%d][%d]:%lf\n",i,j,w[i][j]);
         }
     }
+    initialization();//xの初期値を与える
+    for(k=0;k<num;k++){
+        if(k != 0){
+            //printf("x%d:%lf",k,x[k]);
+            //printf(",");
+            if(k == (num - 1)){
+                printf("\n");
+            }
+        }
+    }
+    
+    for(i=0;i<100;i++){
+        for(j=0;j<num;j++){
+            if(j != 0){
+                for(k=0;k<num;k++){
+                    x[0] = 1.0;
+                    sum[j] += w[k][j] * x[k];
+                }
+                //printf("sum[%d]:%lf\n",j,sum[j]);
+                //xの値を更新
+                if(sum[j]>=0){
+                    x[j] = 1.0;
+                }
+                else{
+                    x[j] = 0.0;
+                }
+                for(k=0;k<num;k++){
+                    if(k != 0){
+                        /*
+                        printf("x%d:%lf",k,x[k]);
+                        printf(",");
+                        if(k == (num - 1)){
+                            printf("\n");
+                        }*/
+                    }
+                }
+                //エネルギーの評価
+                //E = SimultaneousEqu(x);
+                E = energy();
+                //printf("E:%lf\n",-0.5*E);
+            }
+            sum[j] = 0.0;
+        }
+    }
+    
+    
 }
 
 double sigmoid(int i,double sum[]){
@@ -77,25 +130,17 @@ double energy(void){
 double ObtaineWeight(int n,int m,double theta_n,double theta_m,double c){
     int i;
     double E_nm = 0.0;
-    
-    if(n == 0 || m == 0){
-        return theta_n;
-    }
-    else if(n != m){
-        for(i=0;i<num;i++){
-            if(i == 0 || i == n || i == m){
-                x[i] = 1.0;
-            }
-            else{
-                x[i] = 0.0;
-            }
+
+    for(i=0;i<num;i++){
+        if(i == 0 || i == n || i == m){
+            x[i] = 1.0;
         }
-        E_nm = SimultaneousEqu(x) + theta_n + theta_m + c;
-        return E_nm;
+        else{
+            x[i] = 0.0;
+        }
     }
-    else{
-        return 0.0;
-    }
+    E_nm = -SimultaneousEqu(x) + theta_n + theta_m + c;
+    return E_nm;
 }
 
 //n番目のthetaを求める、cは定数の値を予め求める
@@ -145,4 +190,14 @@ double SimultaneousEqu(double x[num]){
         sum = 0.0;
     }
     return E;
+}
+
+void initialization(void){
+    double ini_x[num] = {1.0,1.0,0.0,1.0,0.0,0.0};//最初の１はダミーニューロン
+    int i;
+    
+    for(i=0;i<num;i++){
+        x[i] = ini_x[i];
+    }
+    
 }
