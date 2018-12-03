@@ -98,7 +98,7 @@ int main(void){
                 //エネルギーの評価
                 //E = SimultaneousEqu(x);
                 E = energy();
-                //printf("E:%lf\n",-0.5*E);
+                printf("E:%lf\n",-0.5*E);
             }
             sum[j] = 0.0;
         }
@@ -181,7 +181,7 @@ double SimultaneousEqu(double x[num]){
     double sum = 0.0;
     int i,j;
     
-    for(i=0;i<num;i++){
+    for(i=0;i<num-1;i++){
         
         for(j=0;j<num;j++){
             sum += a[i][j] * x[j];
